@@ -2,11 +2,17 @@
 title: "p8105_hw2_yc4195.RMD"
 output: github_document
 ---
+Yimin Chen 
+yc4195
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(dplyr)
+```
 
 ## Problem 1 
 ```{r}
-library(tidyverse)
-library(dplyr)
 nyc_transit_data =
   read_csv(file = "data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names()%>%
@@ -65,8 +71,6 @@ Of the stations that serve the A train, 17 are ADA compliant.
 
 Read and clean the Mr. Trash Wheel sheet.
 ```{r}
-library(tidyverse)
-library(readxl)
 trashwheel <- read_excel("data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = 1, range =  cell_cols("A:N")) %>% 
   janitor::clean_names() %>% 
   rename(dumpster_number = dumpster) %>% 
