@@ -1,0 +1,171 @@
+---
+title: "p8105_hw2_yc4195.RMD"
+output: github_document
+---
+
+## Problem 1 
+```{r}
+library(tidyverse)
+library(dplyr)
+nyc_transit_data =
+  read_csv(file = "data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
+  janitor::clean_names()%>%
+  select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada,ada_notes)%>%
+  mutate(
+  entry = recode(entry,`YES`= TRUE,`NO`=FALSE))
+```
+**A brief overview of NYC Transit data**:
+
+The NYC Transit Subway Data contains the fundamental information in the NYC subway: the Subway line , station name, latitude and longitude of each station, entrance types, the routes served, whether each station has admission or vending, and whether it is ADA compliant.For Dimension, it has 1868 rows and 20 columns.
+
+My data cleaning steps:
+1.import data and clean the variable
+2.retain required variables
+3.recode the 'entry' variable from a character variable with "YES" or "NO" values to a logical variable with "TRUE" or "FALSE" values.
+
+At this point, the data are not tidy enough. For routes, the variables are spreading over 11 column instead of a united variable name such as "route name/number"", and many columns for routes indicate values instead of characters.
+```{r}
+# Distinct on station name and line
+distinctstation1 <- nyc_transit_data %>% distinct(line,station_name,.keep_all=TRUE)
+distinctstation <- nyc_transit_data %>% distinct(line,station_name)%>%nrow()
+distinctstation
+```
+There are 465 distinct stations.
+```{r}
+ADA_compliant = filter(nyc_transit_data, ada == 'TRUE')
+ADA_compliant<-ADA_compliant %>%distinct(line,station_name)%>%nrow()
+ADA_compliant
+```
+84 stations ADA compliant.
+```{r}
+proportion <-nyc_transit_data %>%filter(entry == 'TRUE',vending == 'NO')%>%nrow()/nyc_transit_data %>%filter(vending == "NO") %>%nrow()
+proportion
+```
+37.7% of station entrances/exits without vending allow entrance. 
+```{r}
+nyc_tidy_data <- nyc_transit_data %>% 
+  mutate_all(as.character)%>% 
+    pivot_longer(route1:route11,names_to = "route_name", names_prefix = "route_", values_to = "route_number")  
+nyc_tidy_data %>% 
+  filter(route_number == "A") %>% 
+  distinct(line, station_name) %>% 
+  nrow()
+```
+There are 60 distinct stations which serve the A train.
+```{r}
+nyc_tidy_data %>% 
+  filter(ada == TRUE) %>%  
+  filter(route_number == "A") %>% 
+  distinct(line, station_name) %>% 
+  nrow()
+```
+Of the stations that serve the A train, 17 are ADA compliant.
+
+## Problem 2
+
+Read and clean the Mr. Trash Wheel sheet.
+```{r}
+library(tidyverse)
+library(readxl)
+trashwheel <- read_excel("data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = 1, range =  cell_cols("A:N")) %>% 
+  janitor::clean_names() %>% 
+  rename(dumpster_number = dumpster) %>% 
+  filter(!is.na(dumpster_number)) %>% 
+  filter(!(month == "Grand Total")) %>% 
+  mutate(sports_balls = as.integer(round(sports_balls, digits = 0)))%>% 
+  mutate(dumpster_number = as.character(dumpster_number))%>% 
+  add_column(dataset = "Mr. Trash Wheel")
+trashwheel
+```
+
+Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset.
+```{r}
+proftrashwheel <- read_excel("data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = 2, range =  cell_cols("A:N")) %>% 
+  janitor::clean_names() %>% 
+  rename(dumpster_number = dumpster) %>% 
+  filter(!is.na(dumpster_number)) %>% 
+  mutate(sports_balls = as.integer(round(sports_balls, digits = 0)))%>% 
+  mutate(dumpster_number = as.character(dumpster_number))%>% 
+  add_column(dataset =  "Professor Trash Wheel")
+proftrashwheel
+combined_data = 
+  full_join(proftrashwheel, trashwheel, by = colnames(trashwheel)[1:15])
+combined_data
+```
+
+
+```{r}
+summary(combined_data)
+str(combined_data)
+weightoftrash_professor<- 
+  combined_data %>% 
+  filter(dataset == "Professor Trash Wheel")
+sum_weightoftrash_professor<-sum(weightoftrash_professor$weight_tons)
+sum_weightoftrash_professor
+
+Mr_2020<- 
+  combined_data %>% 
+  filter(dataset == "Mr. Trash Wheel")%>% 
+  filter(year == 2020)
+number_sportsballs_Mr_2020<- sum(Mr_2020$sports_balls)
+number_sportsballs_Mr_2020
+```
+The combined dataset has 524 observations, each represents a distinct dumpster. There are 15(or 14) variables in total include the dumpster number, the date collected,weight, volume, kinds of trash, the value of homes powered, and at last I have added one variable called "dataset" indicates this data is from Mr. Trash Wheel's or Professor Trash Wheel's. If you ignore this added variable, there are 14 variables in total.For available data,  the total weight of trash collected by Professor Trash Wheel is 135.5 tons and the total number of sports balls collected by Mr. Trash Wheel in 2020 is 856.
+
+## Problem 3
+
+First part within pols-month.csv. 
+```{r}
+pols =
+  read_csv(file = "data/pols-month.csv") %>%
+  janitor::clean_names()%>%
+  separate(mon, into = c("year", "month","day"), sep = "-") %>%
+  mutate(month = as.integer(month),year = as.integer(year),day=as.integer(day))%>%
+  mutate(month = month.abb[month]) %>%
+  mutate(president = ifelse(prez_dem > 0, "dem","gop"))%>%
+  select(-prez_gop, - prez_dem)%>%
+  select(-day)
+pols
+```
+
+Second part within snp.csv.
+```{r}
+snp =
+  read_csv(file = "data/snp.csv") %>%
+  janitor::clean_names()%>%
+  mutate(date = as.Date(date, format="%m/%d/%y"))%>%
+  separate(date, into = c("year", "month","day"), sep = "-") %>%
+  mutate(month = as.integer(month),year = as.integer(year),day=as.integer(day))%>%
+  mutate(year = ifelse(year>2046, year-100, year))%>%
+  mutate(month = month.abb[month]) %>%
+  arrange(year, month)%>%
+  select(year, month,day,close)
+snp
+
+```
+
+Third part within unemployment.csv.
+```{r}
+unemployment = read_csv(file="data/unemployment.csv")%>%
+ pivot_longer(
+             Jan:Dec,
+             names_to = "month",
+             values_to = "unemployment_rate"
+) %>% select(year = Year, everything())
+unemployment
+
+combineddataset= left_join(pols, snp, by = c("month","year"))
+combineddataset
+combineddataset_final=left_join(combineddataset,unemployment, by = c("month", "year"))
+combineddataset_final
+```
+
+For dataset *pols*, there are 822 entries and 9 total columns. The year ranges from 1947 to 2015.Key variables include year-month,
+gov_gop(the number of republican governors on the associated date), sen_gop(the number of republican senators on the associated date), rep_gop( number of republican representatives on the associated date), gov_dem(the number of democratic governors on the associated date), sen_dem(the number of democratic senators on the associated date), rep_dem(the number of democratic representatives on the associated date),president(the president was democratic or republican on the associated date .
+
+For dataset *snp*, there are 787 entries and 4 total columns. The year ranges from 1950 to 2015.Key variables include date(year-month-day) and close (the closing values of the S&P stock index on the associated date).
+
+For dataset *unemployment*, there are 816 entries and 3 total columns. The year ranges from 1948 to 2015.Key variables include year, month, and unemployment rate (the percentage of unemployment of the marked month and year).
+
+For dataset *combineddataset_final*, which merges snp into pols and then merge unemployment into the result, there are 822 entries and 12 total columns. The year ranges from 1947 to 2015.Key variables include year-month-day, gov_gop,sen_gop,rep_gop, gov_dem, sen_dem,rep_dem,president,close,unemployment_rate. Meanings of these variables are all explained above.
+
