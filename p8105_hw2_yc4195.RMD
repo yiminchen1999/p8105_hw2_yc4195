@@ -1,11 +1,13 @@
 ---
 title: "p8105_hw2_yc4195.RMD"
+author: "Yimin Chen"
+date: '`r format(Sys.time(), "%Y-%m-%d")`'
 output: github_document
 ---
 Yimin Chen 
 yc4195
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
 library(tidyverse)
 library(readxl)
 library(dplyr)
@@ -16,7 +18,7 @@ library(dplyr)
 nyc_transit_data =
   read_csv(file = "data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
   janitor::clean_names()%>%
-  select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada,ada_notes)%>%
+  select(line, station_name, station_latitude, station_longitude, route1:route11, entry, exit_only,vending, entrance_type, ada)%>%
   mutate(
   entry = recode(entry,`YES`= TRUE,`NO`=FALSE))
 ```
@@ -29,25 +31,25 @@ My data cleaning steps:
 2.retain required variables
 3.recode the 'entry' variable from a character variable with "YES" or "NO" values to a logical variable with "TRUE" or "FALSE" values.
 
-At this point, the data are not tidy enough. For routes, the variables are spreading over 11 column instead of a united variable name such as "route name/number"", and many columns for routes indicate values instead of characters.
+At this point, the data are not tidy enough. For routes, the variables are spreading over 11 column instead of a united variable name such as "route name/number". Route number and route should both be variables, which means we need to convert 'route' variables from wide to long format.
 ```{r}
 # Distinct on station name and line
 distinctstation1 <- nyc_transit_data %>% distinct(line,station_name,.keep_all=TRUE)
 distinctstation <- nyc_transit_data %>% distinct(line,station_name)%>%nrow()
 distinctstation
 ```
-There are 465 distinct stations.
+There are `r distinctstation`distinct stations.
 ```{r}
 ADA_compliant = filter(nyc_transit_data, ada == 'TRUE')
 ADA_compliant<-ADA_compliant %>%distinct(line,station_name)%>%nrow()
 ADA_compliant
 ```
-84 stations ADA compliant.
+`r ADA_compliant` stations ADA compliant.
 ```{r}
 proportion <-nyc_transit_data %>%filter(entry == 'TRUE',vending == 'NO')%>%nrow()/nyc_transit_data %>%filter(vending == "NO") %>%nrow()
 proportion
 ```
-37.7% of station entrances/exits without vending allow entrance. 
+`r proportion`% of station entrances/exits without vending allow entrance. 
 ```{r}
 nyc_tidy_data <- nyc_transit_data %>% 
   mutate_all(as.character)%>% 
@@ -56,16 +58,25 @@ nyc_tidy_data %>%
   filter(route_number == "A") %>% 
   distinct(line, station_name) %>% 
   nrow()
+a =nyc_tidy_data %>% 
+  filter(route_number == "A") %>% 
+  distinct(line, station_name) %>% 
+  nrow()
 ```
-There are 60 distinct stations which serve the A train.
+There are `r a ` distinct stations which serve the A train.
 ```{r}
 nyc_tidy_data %>% 
   filter(ada == TRUE) %>%  
   filter(route_number == "A") %>% 
   distinct(line, station_name) %>% 
   nrow()
+b= nyc_tidy_data %>% 
+  filter(ada == TRUE) %>%  
+  filter(route_number == "A") %>% 
+  distinct(line, station_name) %>% 
+  nrow()
 ```
-Of the stations that serve the A train, 17 are ADA compliant.
+Of the stations that serve the A train,  `r b ` are ADA compliant.
 
 ## Problem 2
 
@@ -114,7 +125,7 @@ Mr_2020<-
 number_sportsballs_Mr_2020<- sum(Mr_2020$sports_balls)
 number_sportsballs_Mr_2020
 ```
-The combined dataset has 524 observations, each represents a distinct dumpster. There are 15(or 14) variables in total include the dumpster number, the date collected,weight, volume, kinds of trash, the value of homes powered, and at last I have added one variable called "dataset" indicates this data is from Mr. Trash Wheel's or Professor Trash Wheel's. If you ignore this added variable, there are 14 variables in total.For available data,  the total weight of trash collected by Professor Trash Wheel is 135.5 tons and the total number of sports balls collected by Mr. Trash Wheel in 2020 is 856.
+The combined dataset has `r nrow(combined_data) ` observations, each represents a distinct dumpster. There are `r length(combined_data) ` (or 14) variables in total include the dumpster number, the date collected,weight, volume, kinds of trash, the value of homes powered, and at last I have added one variable called "dataset" indicates this data is from Mr. Trash Wheel's or Professor Trash Wheel's. If you ignore this added variable, there are 14 variables in total.For available data,  the total weight of trash collected by Professor Trash Wheel is `r sum_weightoftrash_professor ` tons and the total number of sports balls collected by Mr. Trash Wheel in 2020 is `r number_sportsballs_Mr_2020 `.
 
 ## Problem 3
 
@@ -164,12 +175,12 @@ combineddataset_final=left_join(combineddataset,unemployment, by = c("month", "y
 combineddataset_final
 ```
 
-For dataset *pols*, there are 822 entries and 9 total columns. The year ranges from 1947 to 2015.Key variables include year-month,
+For dataset *pols*, there are `r nrow(pols) ` entries and `r length(pols) ` total columns. The year ranges from 1947 to 2015.Key variables include year-month,
 gov_gop(the number of republican governors on the associated date), sen_gop(the number of republican senators on the associated date), rep_gop( number of republican representatives on the associated date), gov_dem(the number of democratic governors on the associated date), sen_dem(the number of democratic senators on the associated date), rep_dem(the number of democratic representatives on the associated date),president(the president was democratic or republican on the associated date .
 
-For dataset *snp*, there are 787 entries and 4 total columns. The year ranges from 1950 to 2015.Key variables include date(year-month-day) and close (the closing values of the S&P stock index on the associated date).
+For dataset *snp*, there are `r nrow(snp) ` entries and `r length(snp) ` total columns. The year ranges from 1950 to 2015.Key variables include date(year-month-day) and close (the closing values of the S&P stock index on the associated date).
 
-For dataset *unemployment*, there are 816 entries and 3 total columns. The year ranges from 1948 to 2015.Key variables include year, month, and unemployment rate (the percentage of unemployment of the marked month and year).
+For dataset *unemployment*, there are `r nrow(unemployment) `  entries and `r length(unemployment) `  total columns. The year ranges from 1948 to 2015.Key variables include year, month, and unemployment rate (the percentage of unemployment of the marked month and year).
 
-For dataset *combineddataset_final*, which merges snp into pols and then merge unemployment into the result, there are 822 entries and 12 total columns. The year ranges from 1947 to 2015.Key variables include year-month-day, gov_gop,sen_gop,rep_gop, gov_dem, sen_dem,rep_dem,president,close,unemployment_rate. Meanings of these variables are all explained above.
+For dataset *combineddataset_final*, which merges snp into pols and then merge unemployment into the result, there are `r nrow(combineddataset_final) `  entries and `r length(combineddataset_final) ` total columns. The year ranges from 1947 to 2015.Key variables include year-month-day, gov_gop,sen_gop,rep_gop, gov_dem, sen_dem,rep_dem,president,close,unemployment_rate. Meanings of these variables are all explained above.
 
