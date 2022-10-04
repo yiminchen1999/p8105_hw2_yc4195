@@ -151,8 +151,8 @@ snp =
   separate(date, into = c("year", "month","day"), sep = "-") %>%
   mutate(month = as.integer(month),year = as.integer(year),day=as.integer(day))%>%
   mutate(year = ifelse(year>2046, year-100, year))%>%
-  mutate(month = month.abb[month]) %>%
   arrange(year, month)%>%
+  mutate(month = month.abb[month]) %>%
   select(year, month,day,close)
 snp
 
