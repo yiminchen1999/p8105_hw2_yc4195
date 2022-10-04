@@ -1,11 +1,9 @@
 ---
 title: "p8105_hw2_yc4195.RMD"
-author: "Yimin Chen"
+author: "Yimin Chen yc4195"
 date: '`r format(Sys.time(), "%Y-%m-%d")`'
 output: github_document
 ---
-Yimin Chen 
-yc4195
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
 library(tidyverse)
@@ -38,7 +36,7 @@ distinctstation1 <- nyc_transit_data %>% distinct(line,station_name,.keep_all=TR
 distinctstation <- nyc_transit_data %>% distinct(line,station_name)%>%nrow()
 distinctstation
 ```
-There are `r distinctstation`distinct stations.
+There are `r distinctstation` distinct stations.
 ```{r}
 ADA_compliant = filter(nyc_transit_data, ada == 'TRUE')
 ADA_compliant<-ADA_compliant %>%distinct(line,station_name)%>%nrow()
@@ -82,12 +80,12 @@ Of the stations that serve the A train,  `r b ` are ADA compliant.
 
 Read and clean the Mr. Trash Wheel sheet.
 ```{r}
-trashwheel <- read_excel("data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = 1, range =  cell_cols("A:N")) %>% 
+trashwheel <- read_excel("data/Trash Wheel Collection Data.xlsx", sheet = 1, range =  cell_cols("A:N")) %>% 
   janitor::clean_names() %>% 
   rename(dumpster_number = dumpster) %>% 
   filter(!is.na(dumpster_number)) %>% 
-  filter(!(month == "Grand Total")) %>% 
   mutate(sports_balls = as.integer(round(sports_balls, digits = 0)))%>% 
+   mutate(year = as.integer(year))%>%
   mutate(dumpster_number = as.character(dumpster_number))%>% 
   add_column(dataset = "Mr. Trash Wheel")
 trashwheel
@@ -95,16 +93,17 @@ trashwheel
 
 Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset.
 ```{r}
-proftrashwheel <- read_excel("data/Trash-Wheel-Collection-Totals-7-2020-2.xlsx", sheet = 2, range =  cell_cols("A:N")) %>% 
+proftrashwheel <- read_excel("data/Trash Wheel Collection Data.xlsx", sheet = 2, range =  cell_cols("A:M")) %>% 
   janitor::clean_names() %>% 
   rename(dumpster_number = dumpster) %>% 
   filter(!is.na(dumpster_number)) %>% 
-  mutate(sports_balls = as.integer(round(sports_balls, digits = 0)))%>% 
+  mutate(sports_balls = NA)%>%
+  mutate(year = as.integer(year))%>%
   mutate(dumpster_number = as.character(dumpster_number))%>% 
   add_column(dataset =  "Professor Trash Wheel")
 proftrashwheel
 combined_data = 
-  full_join(proftrashwheel, trashwheel, by = colnames(trashwheel)[1:15])
+  full_join(trashwheel,proftrashwheel,by = colnames(trashwheel)[1:15])
 combined_data
 ```
 
